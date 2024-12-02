@@ -1,5 +1,7 @@
 #!/usr/bin/env -S swipl -f -q
 :- use_module(library(dcg/basics)).
+:- use_module(library(apply)).
+:- use_module(library(prolog_stack)).
 
 :- initialization main.
 
@@ -16,8 +18,19 @@ tuples_to_lists([(X, Y) | Ts], (L1, L2)) :-
     L1 = [X | L1s],
     L2 = [Y | L2s].
 
+distance(Dist, Left, Right) :-
+  Signed is Left - Right,
+  Dist is abs(Signed).
+
+distances_list(Unsorted, Distances) :-
+  tuples_to_lists(Unsorted, (L1Unsorted, L2Unsorted)),
+  sort(L1Unsorted, L1Sorted),
+  sort(L2Unsorted, L2Sorted),
+  maplist(distance, Distances, L1Sorted, L2Sorted).
+
 main :-
   phrase_from_file(lines(Lines), "data/day1.txt"),
-  tuples_to_lists(Lines, (L1, L2)),
-  format('~W', L1),
+  distances_list(Lines, Distances),
+  foldl(plus, Distances, 0, Res),
+  format("~w", Res),
   halt(0).
