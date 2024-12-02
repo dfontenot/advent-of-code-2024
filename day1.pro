@@ -24,13 +24,13 @@ distance(Dist, Left, Right) :-
 
 distances_list(Unsorted, Distances) :-
   tuples_to_lists(Unsorted, (L1Unsorted, L2Unsorted)),
-  sort(L1Unsorted, L1Sorted),
-  sort(L2Unsorted, L2Sorted),
+  sort(0, @=<, L1Unsorted, L1Sorted),
+  sort(0, @=<, L2Unsorted, L2Sorted),
   maplist(distance, Distances, L1Sorted, L2Sorted).
 
 main :-
-  phrase_from_file(lines(Lines), "data/day1.txt"),
+  phrase_from_file(lines(Lines), 'data/day1.txt'),
   distances_list(Lines, Distances),
   foldl(plus, Distances, 0, Res),
-  format("~w", Res),
+  format('~w~n', Res),
   halt(0).
