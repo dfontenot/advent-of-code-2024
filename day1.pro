@@ -28,9 +28,30 @@ distances_list(Unsorted, Distances) :-
   sort(0, @=<, L2Unsorted, L2Sorted),
   maplist(distance, Distances, L1Sorted, L2Sorted).
 
-main :-
+main_part_1 :-
   phrase_from_file(lines(Lines), 'data/day1.txt'),
   distances_list(Lines, Distances),
   foldl(plus, Distances, 0, Res),
+  format('~w~n', Res),
+  halt(0).
+
+increment_occurrences(Occurrence, Occurrences, OccurrencesOut) :-
+  ( get_dict(Occurrence, Occurrences, Count) -> NewCount is Count + 1 ; NewCount is 1 ),
+  put_dict(Occurrence, Occurrences, NewCount, OccurrencesOut).
+
+get_similarity(Occurrences, Val, Similarity) :-
+  ( get_dict(Val, Occurrences, Count) -> FoundCount is Count ; FoundCount is 0 ),
+  Similarity is FoundCount * Val.
+
+similarities_list(Lines, Similarities) :-
+  tuples_to_lists(Lines, (L1, L2)),
+  dict_create(L2Occurrences, occurrences, []),
+  foldl(increment_occurrences, L2, L2Occurrences, AllOccurrences),
+  maplist(get_similarity(AllOccurrences), L1, Similarities).
+
+main :-
+  phrase_from_file(lines(Lines), 'data/day1.txt'),
+  similarities_list(Lines, Similarities),
+  foldl(plus, Similarities, 0, Res),
   format('~w~n', Res),
   halt(0).
