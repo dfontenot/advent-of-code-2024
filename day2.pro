@@ -3,10 +3,10 @@
 :- use_module(library(apply)).
 :- use_module(library(prolog_stack)).
 
-%:- initialization main.
+:- initialization main.
 
-line([V, W, X, Y, Z]) -->
-  integer(V), blank, integer(W), blank, integer(X), blank, integer(Y), blank, integer(Z).
+line([L|Ls]) --> integer(L), " ", line(Ls).
+line([L]) --> integer(L).
 
 lines([]) --> eos.
 lines([L|Ls]) -->
@@ -30,11 +30,11 @@ is_safe_helper([X, Y | Rst]) :-
 is_safe([]) :- true.
 is_safe([_ | []]) :- true.
 is_safe(Lst) :-
-  ( sort(0, @<, Lst, Lst); sort(0, @>, Lst, Lst) ),
+  ( sort(0, @=<, Lst, Lst); sort(0, @>=, Lst, Lst) ),
   is_safe_helper(Lst).
 
 main :-
-  phrase_from_file(lines(Lines), 'data/day2example.txt'),
+  phrase_from_file(lines(Lines), 'data/day2.txt'),
   include(is_safe, Lines, SafeReports),
   length(SafeReports, Res),
   format('~w~n', Res),
