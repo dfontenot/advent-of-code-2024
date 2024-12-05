@@ -33,9 +33,26 @@ is_safe(Lst) :-
   ( sort(0, @=<, Lst, Lst); sort(0, @>=, Lst, Lst) ),
   is_safe_helper(Lst).
 
+% succeeds if lists are the same and left has at most 1 nil replacing a value
+one_nil_allowed([], []) :- true.
+one_nil_allowed([X], [Y]) :-
+  X = Y;
+  X = nil.
+one_nil_allowed([X|Rst1], [Y|Rst2]) :-
+  ( X = Y -> one_nil_allowed(Rst1, Rst2) ; ( X = nil -> maplist(=, Rst1, Rst2) ) ).
+
+is_safeish([]) :- true.
+is_safeish(Lst) :-
+  is_safe(Lst);
+  (
+    one_nil_allowed(LstOneNil, Lst),
+    delete(LstOneNil, nil, LstNoNil),
+    is_safe(LstNoNil)
+  ).
+
 main :-
   phrase_from_file(lines(Lines), 'data/day2.txt'),
-  include(is_safe, Lines, SafeReports),
+  include(is_safeish, Lines, SafeReports),
   length(SafeReports, Res),
   format('~w~n', Res),
   halt(0).
