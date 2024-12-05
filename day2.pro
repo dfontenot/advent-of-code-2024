@@ -46,7 +46,7 @@ is_safeish(Lst) :-
   is_safe(Lst);
   (
     one_nil_allowed(LstOneNil, Lst),
-    delete(LstOneNil, nil, LstNoNil),
+    select(nil, LstOneNil, LstNoNil),
     is_safe(LstNoNil)
   ).
 
