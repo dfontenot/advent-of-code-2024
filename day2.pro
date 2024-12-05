@@ -39,16 +39,14 @@ one_nil_allowed([X], [Y]) :-
   X = Y;
   X = nil.
 one_nil_allowed([X|Rst1], [Y|Rst2]) :-
-  ( X = Y -> one_nil_allowed(Rst1, Rst2) ; ( X = nil -> maplist(=, Rst1, Rst2) ) ).
+  ( X = Y, one_nil_allowed(Rst1, Rst2) );
+  ( X = nil, maplist(=, Rst1, Rst2) ).
 
 is_safeish([]) :- true.
 is_safeish(Lst) :-
-  is_safe(Lst);
-  (
-    one_nil_allowed(LstOneNil, Lst),
-    select(nil, LstOneNil, LstNoNil),
-    is_safe(LstNoNil)
-  ).
+  one_nil_allowed(LstOneNil, Lst),
+  select(nil, LstOneNil, LstNoNil),
+  is_safe(LstNoNil).
 
 main :-
   phrase_from_file(lines(Lines), 'data/day2.txt'),
