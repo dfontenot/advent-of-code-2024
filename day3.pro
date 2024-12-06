@@ -3,10 +3,7 @@
 :- use_module(library(apply)).
 :- use_module(library(prolog_stack)).
 
-%:- initialization main.
-
-skip_to(Code) -->
-  string_without(Code, _), Code.
+:- initialization main.
 
 computer_data([]) --> eos.
 computer_data([(Left, Right)|Ls]) -->
@@ -19,8 +16,15 @@ computer_data([(Left, Right)|Ls]) -->
 computer_data(L) -->
   [_],
   computer_data(L).
-computer_data(_) --> [].
+
+mult_tuples([], []) :- true.
+mult_tuples([(Left, Right)|Ls], [Num|Ls2]) :-
+  Num is Left * Right,
+  mult_tuples(Ls, Ls2).
 
 main :-
-  phrase_from_file(computer_data(Instructions), 'data/day3example.txt'),
+  phrase_from_file(computer_data(Instructions), 'data/day3.txt'),
+  mult_tuples(Instructions, Multiplied),
+  foldl(plus, Multiplied, 0, Res),
+  format("~w~n", [Res]),
   halt(0).
