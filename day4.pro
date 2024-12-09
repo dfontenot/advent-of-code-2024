@@ -20,7 +20,11 @@ lines([L|Ls]) -->
 list_first([], _) :- false.
 list_first([L|_], First) :- L = First.
 
-wordsearch_get(Row, Col, RowCount, Dict, Res) :-
+wordsearch_get((Row, Col), (RowCount, ColCount), Dict, Res) :-
+  Row < RowCount,
+  Col < ColCount,
+  Row >= 0,
+  Col >= 0,
   Idx is (RowCount * Row) + Col,
   get_dict(Idx, Dict, Res).
 
@@ -39,6 +43,6 @@ main :-
   list_first(Wordsearch, FirstRow),
   length(FirstRow, ColCount),
   wordsearch_dict(Wordsearch, Dict),
-  wordsearch_get(9, 9, RowCount, Dict, Res),
+  wordsearch_get((9, 9), (RowCount, ColCount), Dict, Res),
   format('~w~n', [Res]),
   halt(0).
