@@ -4,7 +4,7 @@
 :- use_module(library(prolog_stack)).
 :- use_module(library(lists)).
 
-%:- initialization main.
+:- initialization main.
 
 wordsearch_char(Char) -->
   [FoundChar],
@@ -36,11 +36,9 @@ wordsearch_dict_(Letter, (Idx, Dict), (NewIdx, NewDict)) :-
   put_dict(Idx, Dict, Letter, NewDict),
   NewIdx is Idx + 1.
 
-wordsearch_dict([], Dict) :- Dict = wordsearch{}, format('bad~n').
+wordsearch_dict([], Dict) :- Dict = wordsearch{}.
 wordsearch_dict(Rows, Dict) :-
-  format('rows ~w~n', [Rows]),
   flatten(Rows, FlatWordsearch),
-  format('flat ~w~n', [FlatWordsearch]),
   foldl(wordsearch_dict_, FlatWordsearch, (0, wordsearch{}), (_, Dict)).
 
 xmas_count_at_loc_((Row, Col), GridDims, Dict, (RowDir, ColDir)) :-
@@ -49,20 +47,35 @@ xmas_count_at_loc_((Row, Col), GridDims, Dict, (RowDir, ColDir)) :-
   wordsearch_get((Row + RowDir * 2, Col + ColDir * 2), GridDims, Dict, 'A'),
   wordsearch_get((Row + RowDir * 3, Col + ColDir * 3), GridDims, Dict, 'S').
 
-xmas_count_at_loc(Loc, GridDims, Dict, Count) :-
+xmas_count_at_loc(GridDims, Dict, Loc, Count) :-
   Directions = [(1, 1), (1, 0), (0, 1), (-1, 0), (0, -1), (-1, -1), (-1, 1), (1, -1)],
   include(xmas_count_at_loc_(Loc, GridDims, Dict), Directions, Successes),
   length(Successes, Count).
 
+lst_tuple([], _) :- false.
+lst_tuple([_|[]], _) :- false.
+lst_tuple([H|T], (L,R)) :-
+  length(T, 1),
+  H = L,
+  T = [R].
+
+% ref: https://stackoverflow.com/a/49503900, https://stackoverflow.com/a/72426112
+cart_product((RowCount, ColCount), Lst) :-
+  RowCountFence is RowCount - 1,
+  ColCountFence is ColCount - 1,
+  findall(X, between(0, RowCountFence, X), Rows),
+  findall(X, between(0, ColCountFence, X), Cols),
+  findall([X,Y], (member(X, Rows), member(Y, Cols)), Lsts),
+  maplist(lst_tuple, Lsts, Lst).
+
 main :-
-  phrase_from_file(wordsearch(Wordsearch), 'data/day4example.txt'),
+  phrase_from_file(wordsearch(Wordsearch), 'data/day4.txt'),
   length(Wordsearch, RowCount),
   nth0(0, Wordsearch, FirstRow),
   length(FirstRow, ColCount),
-  format('~w ~w~n', [ColCount, FirstRow]),
   wordsearch_dict(Wordsearch, Dict),
-  format('~w~n', [Dict]),
-  %xmas_count_at_loc((0,5), (RowCount,ColCount), Dict, Res),
-  xmas_count_at_loc((4,0), (RowCount,ColCount), Dict, Res),
-  %wordsearch_get((2, 0), (RowCount, ColCount), Dict, Res),
-  format('answer ~w~n', [Res]).
+  cart_product((RowCount, ColCount), Positions),
+  maplist(xmas_count_at_loc((RowCount, ColCount), Dict), Positions, XmasCounts),
+  sum_list(XmasCounts, FinalCount),
+  format('~w~n', [FinalCount]),
+  halt(0).
