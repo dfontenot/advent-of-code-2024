@@ -6,19 +6,23 @@
 
 %:- initialization main.
 
-line([Letter|Ls]) -->
-  [Char],
-  { char_code(Letter, Char), atom_codes('XMAS', AllowedCodes), member(Char, AllowedCodes) },
-  line(Ls).
-line(_) -->
-  eol.
+wordsearch_char(Char) -->
+  [FoundChar],
+  { char_code(Char, FoundChar), atom_codes('XMAS', AllowedCodes), member(FoundChar, AllowedCodes), ! }.
 
-lines([]) --> eos.
-lines([L|Ls]) -->
-  line(L), lines(Ls).
+rest_of_line([Char|Cs]) -->
+  wordsearch_char(Char),
+  rest_of_line(Cs).
+rest_of_line([]) --> [].
 
-list_first([], _) :- false.
-list_first([L|_], First) :- L = First.
+line([Char|Cs]) -->
+  wordsearch_char(Char),
+  rest_of_line(Cs),
+  eol, !.
+
+wordsearch([]) --> eos.
+wordsearch([L|Ls]) -->
+  line(L), wordsearch(Ls), !.
 
 wordsearch_get((Row, Col), (RowCount, ColCount), Dict, Res) :-
   Row < RowCount,
@@ -29,13 +33,15 @@ wordsearch_get((Row, Col), (RowCount, ColCount), Dict, Res) :-
   get_dict(Idx, Dict, Res).
 
 wordsearch_dict_(Letter, (Idx, Dict), (NewIdx, NewDict)) :-
-  put_dict(Idx, Dict, Letter, NewDict),
-  NewIdx is Idx + 1.
+  put_dict(Idx, Dict, Letter, NewDict), !,
+  NewIdx is Idx + 1, !.
 
-wordsearch_dict([], Dict) :- Dict = wordsearch{}.
+wordsearch_dict([], Dict) :- Dict = wordsearch{}, format('bad~n').
 wordsearch_dict(Rows, Dict) :-
-  flatten(Rows, FlatWordsearch),
-  foldl(wordsearch_dict_, FlatWordsearch, (0, wordsearch{}), (_, Dict)).
+  format('rows ~w~n', [Rows]),
+  flatten(Rows, FlatWordsearch), !,
+  format('flat ~w~n', [FlatWordsearch]),
+  foldl(wordsearch_dict_, FlatWordsearch, (0, wordsearch{}), (_, Dict)), !.
 
 xmas_count_at_loc_((Row, Col), GridDims, Dict, (RowDir, ColDir)) :-
   wordsearch_get((Row, Col), GridDims, Dict, 'X'),
@@ -49,13 +55,14 @@ xmas_count_at_loc(Loc, GridDims, Dict, Count) :-
   length(Successes, Count).
 
 main :-
-  phrase_from_file(lines(Wordsearch), 'data/day4example.txt'),
+  phrase_from_file(wordsearch(Wordsearch), 'data/day4example.txt'),
   length(Wordsearch, RowCount),
-  list_first(Wordsearch, FirstRow),
+  nth0(0, Wordsearch, FirstRow),
   length(FirstRow, ColCount),
+  format('~w ~w~n', [ColCount, FirstRow]),
   wordsearch_dict(Wordsearch, Dict),
+  format('~w~n', [Dict]),
   %xmas_count_at_loc((0,5), (RowCount,ColCount), Dict, Res),
-  %xmas_count_at_loc((4,0), (RowCount,ColCount), Dict, Res),
-  wordsearch_get((2, 0), (RowCount, ColCount), Dict, Res),
-  format('~w~n', [Res]),
-  halt(0).
+  xmas_count_at_loc((4,0), (RowCount,ColCount), Dict, Res),
+  %wordsearch_get((2, 0), (RowCount, ColCount), Dict, Res),
+  format('answer ~w~n', [Res]).
