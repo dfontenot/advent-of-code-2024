@@ -33,15 +33,15 @@ wordsearch_get((Row, Col), (RowCount, ColCount), Dict, Res) :-
   get_dict(Idx, Dict, Res).
 
 wordsearch_dict_(Letter, (Idx, Dict), (NewIdx, NewDict)) :-
-  put_dict(Idx, Dict, Letter, NewDict), !,
-  NewIdx is Idx + 1, !.
+  put_dict(Idx, Dict, Letter, NewDict),
+  NewIdx is Idx + 1.
 
 wordsearch_dict([], Dict) :- Dict = wordsearch{}, format('bad~n').
 wordsearch_dict(Rows, Dict) :-
   format('rows ~w~n', [Rows]),
-  flatten(Rows, FlatWordsearch), !,
+  flatten(Rows, FlatWordsearch),
   format('flat ~w~n', [FlatWordsearch]),
-  foldl(wordsearch_dict_, FlatWordsearch, (0, wordsearch{}), (_, Dict)), !.
+  foldl(wordsearch_dict_, FlatWordsearch, (0, wordsearch{}), (_, Dict)).
 
 xmas_count_at_loc_((Row, Col), GridDims, Dict, (RowDir, ColDir)) :-
   wordsearch_get((Row, Col), GridDims, Dict, 'X'),
