@@ -47,11 +47,33 @@ xmas_count_at_loc_((Row, Col), GridDims, Dict, (RowDir, ColDir)) :-
   wordsearch_get((Row + RowDir * 2, Col + ColDir * 2), GridDims, Dict, 'A'),
   wordsearch_get((Row + RowDir * 3, Col + ColDir * 3), GridDims, Dict, 'S').
 
-x_mas_count_at_loc_((Row, Col), GridDims, Dict) :-
-  wordsearch_get((Row, Col), GridDims, Dict, 'A'),
+x_mas_count_at_loc_(Loc, GridDims, Dict) :-
+  wordsearch_get(Loc, GridDims, Dict, 'A'), !,
+  x_mas_count_at_loc_options(Loc, GridDims, Dict).
+
+% M's on left, S's on right
+x_mas_count_at_loc_options((Row, Col), GridDims, Dict) :-
   wordsearch_get((Row - 1, Col - 1), GridDims, Dict, 'M'),
   wordsearch_get((Row - 1, Col + 1), GridDims, Dict, 'S'),
   wordsearch_get((Row + 1, Col - 1), GridDims, Dict, 'M'),
+  wordsearch_get((Row + 1, Col + 1), GridDims, Dict, 'S').
+% M's on right, S's on left
+x_mas_count_at_loc_options((Row, Col), GridDims, Dict) :-
+  wordsearch_get((Row - 1, Col - 1), GridDims, Dict, 'S'),
+  wordsearch_get((Row - 1, Col + 1), GridDims, Dict, 'M'),
+  wordsearch_get((Row + 1, Col - 1), GridDims, Dict, 'S'),
+  wordsearch_get((Row + 1, Col + 1), GridDims, Dict, 'M').
+% M's on bottom, S's on top
+x_mas_count_at_loc_options((Row, Col), GridDims, Dict) :-
+  wordsearch_get((Row - 1, Col - 1), GridDims, Dict, 'S'),
+  wordsearch_get((Row - 1, Col + 1), GridDims, Dict, 'S'),
+  wordsearch_get((Row + 1, Col - 1), GridDims, Dict, 'M'),
+  wordsearch_get((Row + 1, Col + 1), GridDims, Dict, 'M').
+% M's on top, S's on bottom
+x_mas_count_at_loc_options((Row, Col), GridDims, Dict) :-
+  wordsearch_get((Row - 1, Col - 1), GridDims, Dict, 'M'),
+  wordsearch_get((Row - 1, Col + 1), GridDims, Dict, 'M'),
+  wordsearch_get((Row + 1, Col - 1), GridDims, Dict, 'S'),
   wordsearch_get((Row + 1, Col + 1), GridDims, Dict, 'S').
 
 xmas_count_at_loc(GridDims, Dict, Loc, Count) :-
