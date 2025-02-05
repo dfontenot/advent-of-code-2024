@@ -4,7 +4,14 @@
 :- use_module(library(prolog_stack)).
 :- use_module(library(lists)).
 
-:- initialization main.
+%:- initialization main.
+
+:- dynamic page_ordering_rule/2.
+
+% left atom in sequence before right atom is ok
+setup_print_ordering_rules([]).
+setup_print_ordering_rules([(Left, Right)|Rst]) :-
+  assertz((page_ordering_rule(Right, Left) :- false)).
 
 member_(List, Elem) :- member(Elem, List).
 
@@ -44,4 +51,5 @@ printer(PrintRules, PageUpdates) -->
 main :-
   phrase_from_file(printer(PrintOrderRules, PageUpdates), 'data/day5example.txt'),
   format('~w ~w~n', [PrintOrderRules, PageUpdates]),
+  setup_print_ordering_rules(PrintOrderRules),
   halt(0).
