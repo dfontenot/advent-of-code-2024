@@ -21,6 +21,19 @@ lst_equal_length(Lst1, Lst2) :-
   length(Lst2, Lst2Len),
   Lst1Len =:= Lst2Len.
 
+lst_middle_([], _, _, _) :- false.
+lst_middle_([Num|_], LstMiddle, Middle, Idx) :-
+  Idx =:= LstMiddle,
+  Middle = Num.
+lst_middle_([_|Rst], LstMiddle, Middle, Idx) :-
+  NextIdx is Idx + 1,
+  lst_middle_(Rst, LstMiddle, Middle, NextIdx).
+lst_middle(Lst, Middle) :-
+  length(Lst, LstLen),
+  (LstLen mod 2) =:= 1,
+  LstMiddle is ceil(LstLen / 2),
+  lst_middle_(Lst, LstMiddle, Middle, 1).
+
 % does there exist a rule that has this number in it at all
 rule_for_page_number(Number) :-
   page_ordering_rule(Number, _);
@@ -79,5 +92,6 @@ main :-
   format('~w ~w~n', [PrintOrderRules, PageUpdates]),
   setup_print_ordering_rules(PrintOrderRules),
   include(update_in_correct_order, PageUpdates, CorrectPageUpdates),
-  format('~w~n', [CorrectPageUpdates]).
+  maplist(lst_middle, CorrectPageUpdates, MiddlePagesOnly),
+  format('~w~n', [MiddlePagesOnly]).
   %halt(0).
