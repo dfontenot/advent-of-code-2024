@@ -4,7 +4,7 @@
 :- use_module(library(prolog_stack)).
 :- use_module(library(lists)).
 
-%:- initialization main.
+:- initialization main.
 
 :- dynamic page_ordering_rule/2.
 
@@ -46,12 +46,10 @@ page_ordering_rule_(NewPageNumber, _) :-
   format('precondition failed page number ~w is not in the rules list~n'),
   fail.
 page_ordering_rule_(NewPageNumber, SeenNumber) :-
-  format('checking for rule ~w, ~w~n', [NewPageNumber, SeenNumber]),
   page_ordering_rule(SeenNumber, NewPageNumber).
 
 update_in_correct_order_([], _) :- true.
 update_in_correct_order_([PageNumber|Rst], Context) :-
-  format('sending context to maplist ~w ~n', [Context]),
   maplist(page_ordering_rule_(PageNumber), Context),
   update_in_correct_order_(Rst, [PageNumber|Context]).
 
@@ -88,10 +86,11 @@ printer(PrintRules, PageUpdates) -->
   parse_rules(PrintRules), parse_page_updates(PageUpdates).
 
 main :-
-  phrase_from_file(printer(PrintOrderRules, PageUpdates), 'data/day5example.txt'),
-  format('~w ~w~n', [PrintOrderRules, PageUpdates]),
+  phrase_from_file(printer(PrintOrderRules, PageUpdates), 'data/day5.txt'),
   setup_print_ordering_rules(PrintOrderRules),
   include(update_in_correct_order, PageUpdates, CorrectPageUpdates),
   maplist(lst_middle, CorrectPageUpdates, MiddlePagesOnly),
-  format('~w~n', [MiddlePagesOnly]).
-  %halt(0).
+  maplist(atom_number, MiddlePagesOnly, MiddlePageNums),
+  sum_list(MiddlePageNums, Answer),
+  format('~w~n', [Answer]),
+  halt(0).
