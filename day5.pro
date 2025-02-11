@@ -11,7 +11,8 @@
 % left atom in sequence before right atom is ok
 setup_print_ordering_rules([]).
 setup_print_ordering_rules([(Left, Right)|Rst]) :-
-  assertz((page_ordering_rule(Right, Left) :- false)).
+  assertz(page_ordering_rule(Left, Right)),
+  setup_print_ordering_rules(Rst).
 
 member_(List, Elem) :- member(Elem, List).
 
@@ -19,6 +20,31 @@ lst_equal_length(Lst1, Lst2) :-
   length(Lst1, Lst1Len),
   length(Lst2, Lst2Len),
   Lst1Len =:= Lst2Len.
+
+% does there exist a rule that has this number in it at all
+rule_for_page_number(Number) :-
+  page_ordering_rule(Number, _);
+  page_ordering_rule(_, Number).
+
+page_ordering_rule_(_, []) :- true.
+% debug clause
+page_ordering_rule_(NewPageNumber, _) :-
+  not(rule_for_page_number(NewPageNumber)),
+  format('precondition failed page number ~w is not in the rules list~n'),
+  fail.
+page_ordering_rule_(NewPageNumber, SeenNumber) :-
+  format('checking for rule ~w, ~w~n', [NewPageNumber, SeenNumber]),
+  page_ordering_rule(SeenNumber, NewPageNumber).
+
+update_in_correct_order_([], _) :- true.
+update_in_correct_order_([PageNumber|Rst], Context) :-
+  format('sending context to maplist ~w ~n', [Context]),
+  maplist(page_ordering_rule_(PageNumber), Context),
+  update_in_correct_order_(Rst, [PageNumber|Context]).
+
+update_in_correct_order([]) :- true.
+update_in_correct_order([FirstPageUpdate|Rst]) :-
+  update_in_correct_order_(Rst, [FirstPageUpdate]).
 
 page_identifier(EndsWith, Id) -->
   { atom_codes('0123456789', AllowedCodes), ! },
@@ -52,4 +78,6 @@ main :-
   phrase_from_file(printer(PrintOrderRules, PageUpdates), 'data/day5example.txt'),
   format('~w ~w~n', [PrintOrderRules, PageUpdates]),
   setup_print_ordering_rules(PrintOrderRules),
-  halt(0).
+  include(update_in_correct_order, PageUpdates, CorrectPageUpdates),
+  format('~w~n', [CorrectPageUpdates]).
+  %halt(0).
