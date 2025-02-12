@@ -4,7 +4,7 @@
 :- use_module(library(prolog_stack)).
 :- use_module(library(lists)).
 
-:- initialization main.
+%:- initialization main.
 
 :- dynamic page_ordering_rule/2.
 
@@ -34,6 +34,24 @@ lst_middle(Lst, Middle) :-
   LstMiddle is ceil(LstLen / 2),
   lst_middle_(Lst, LstMiddle, Middle, 1).
 
+free_and_different(T1, T2) :-
+  var(T1),
+  var(T2),
+  T1 \== T2.
+
+sliding_window_2(_, []) :- false.
+sliding_window_2(_, [_|[]]) :- false.
+sliding_window_2(Fnc, [X,Y|[]]) :- call(Fnc, X, Y).
+sliding_window_2(Fnc, [X,Y|Rst]) :-
+  call(Fnc, X, Y),
+  sliding_window_2(Fnc, [Y|Rst]).
+
+n_free_vars(0, []) :- true.
+n_free_vars(1, [T|[]]) :- var(T).
+n_free_vars(N, Lst) :-
+  length(Lst, N),
+  sliding_window_2(free_and_different, Lst).
+
 % does there exist a rule that has this number in it at all
 rule_for_page_number(Number) :-
   page_ordering_rule(Number, _);
@@ -56,6 +74,23 @@ update_in_correct_order_([PageNumber|Rst], Context) :-
 update_in_correct_order([]) :- true.
 update_in_correct_order([FirstPageUpdate|Rst]) :-
   update_in_correct_order_(Rst, [FirstPageUpdate]).
+
+correct_order_([], _) :- true.
+correct_order_([Unordered|[]], [Ordered|[]]) :- Unordered = Ordered.
+correct_order_([Unordered1,Unordered2|UnorderedRst], [Ordered1,Ordered2|OrderedRst]) :-
+  page_ordering_rule(Unordered1, Unordered2),
+  Unordered1 = Ordered1,
+  Unordered2 = Ordered2,
+  correct_order_([Unordered2|UnorderedRst], [Ordered2|OrderedRst]).
+correct_order_([Unordered|UnorderedRst], Ordered) :-
+  append(UnorderedRst, [Unordered], Shuffled),
+  correct_order_(Shuffled, Ordered).
+
+correct_order(Unordered, Ordered) :-
+  length(Unordered, Len),
+  n_free_vars(Len, OrderedEmpty),
+  correct_order_(Unordered, OrderedEmpty),
+  Ordered = OrderedEmpty.
 
 page_identifier(EndsWith, Id) -->
   { atom_codes('0123456789', AllowedCodes), ! },
@@ -85,7 +120,7 @@ parse_page_updates([UpdateIds|Rst]) -->
 printer(PrintRules, PageUpdates) -->
   parse_rules(PrintRules), parse_page_updates(PageUpdates).
 
-main :-
+part_1 :-
   phrase_from_file(printer(PrintOrderRules, PageUpdates), 'data/day5.txt'),
   setup_print_ordering_rules(PrintOrderRules),
   include(update_in_correct_order, PageUpdates, CorrectPageUpdates),
@@ -94,3 +129,9 @@ main :-
   sum_list(MiddlePageNums, Answer),
   format('~w~n', [Answer]),
   halt(0).
+
+main :-
+  phrase_from_file(printer(PrintOrderRules, PageUpdates), 'data/day5example.txt'),
+  setup_print_ordering_rules(PrintOrderRules),
+  exclude(update_in_correct_order, PageUpdates, IncorrectPageUpdates),
+  format('~w~n', [IncorrectPageUpdates]).
