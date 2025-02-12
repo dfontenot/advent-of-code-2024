@@ -78,13 +78,13 @@ update_in_correct_order([FirstPageUpdate|Rst]) :-
 correct_order_([], _) :- true.
 correct_order_([Unordered|[]], [Ordered|[]]) :- Unordered = Ordered.
 correct_order_([Unordered1,Unordered2|UnorderedRst], [Ordered1,Ordered2|OrderedRst]) :-
-  page_ordering_rule(Unordered1, Unordered2),
-  Unordered1 = Ordered1,
-  Unordered2 = Ordered2,
+  page_ordering_rule(Ordered1, Ordered2),
+  Ordered1 = Unordered1,
+  Ordered2 = Unordered2,
   correct_order_([Unordered2|UnorderedRst], [Ordered2|OrderedRst]).
-correct_order_([Unordered|UnorderedRst], Ordered) :-
-  append(UnorderedRst, [Unordered], Shuffled),
-  correct_order_(Shuffled, Ordered).
+correct_order_(Unordered, [OrderedNum|Rst]) :-
+  append(Rst, [OrderedNum], Shuffled),
+  correct_order_(Unordered, Shuffled).
 
 correct_order(Unordered, Ordered) :-
   length(Unordered, Len),
