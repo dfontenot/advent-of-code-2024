@@ -75,22 +75,30 @@ update_in_correct_order([]) :- true.
 update_in_correct_order([FirstPageUpdate|Rst]) :-
   update_in_correct_order_(Rst, [FirstPageUpdate]).
 
-correct_order_([], _) :- true.
-correct_order_([Unordered|[]], [Ordered|[]]) :- Unordered = Ordered.
-correct_order_([Unordered1,Unordered2|UnorderedRst], [Ordered1,Ordered2|OrderedRst]) :-
-  page_ordering_rule(Ordered1, Ordered2),
-  Ordered1 = Unordered1,
-  Ordered2 = Unordered2,
-  correct_order_([Unordered2|UnorderedRst], [Ordered2|OrderedRst]).
-correct_order_(Unordered, [OrderedNum|Rst]) :-
-  append(Rst, [OrderedNum], Shuffled),
-  correct_order_(Unordered, Shuffled).
+can_end_with(Bag, Left, Filtered) :-
+  bagof(R, page_ordering_rule(Left, R), RightNumbers),
+  bagof(N, (member(N, RightNumbers), member(N, Bag)), Filtered).
 
-correct_order(Unordered, Ordered) :-
-  length(Unordered, Len),
-  n_free_vars(Len, OrderedEmpty),
-  correct_order_(Unordered, OrderedEmpty),
-  Ordered = OrderedEmpty.
+can_start_with(Bag, Filtered) :-
+  bagof(L, page_ordering_rule(L, _), LeftNumbers),
+  bagof(N, (member(N, LeftNumbers), member(N, Bag)), Filtered).
+
+correct_order_([Num|[]], Left, [Answer|[]]) :-
+  page_ordering_rule(Left, Num),
+  Answer = Num.
+correct_order_(Bag, Left, [AnswerH|AnswerT]) :-
+  can_end_with(Bag, Left, Filtered),
+  member(Next, Filtered),
+  delete(Bag, Next, BagRst),
+  AnswerH = Next,
+  correct_order_(BagRst, Next, AnswerT).
+
+correct_order(Bag, [AnswerH|AnswerT]) :-
+  can_start_with(Bag, Starters),
+  member(Starter, Starters),
+  delete(Bag, Starter, BagRst),
+  AnswerH = Starter,
+  correct_order_(BagRst, Starter, AnswerT).
 
 page_identifier(EndsWith, Id) -->
   { atom_codes('0123456789', AllowedCodes), ! },
@@ -134,4 +142,9 @@ main :-
   phrase_from_file(printer(PrintOrderRules, PageUpdates), 'data/day5example.txt'),
   setup_print_ordering_rules(PrintOrderRules),
   exclude(update_in_correct_order, PageUpdates, IncorrectPageUpdates),
-  format('~w~n', [IncorrectPageUpdates]).
+  maplist(correct_order, IncorrectPageUpdates, CorrectedPageUpdates),
+  maplist(lst_middle, CorrectedPageUpdates, MiddlePagesOnly),
+  maplist(atom_number, MiddlePagesOnly, MiddlePageNums),
+  sum_list(MiddlePageNums, Answer),
+  format('~w~n', [Answer]),
+  halt(0).
