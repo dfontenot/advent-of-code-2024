@@ -34,23 +34,20 @@ lst_middle(Lst, Middle) :-
   LstMiddle is ceil(LstLen / 2),
   lst_middle_(Lst, LstMiddle, Middle, 1).
 
-free_and_different(T1, T2) :-
-  var(T1),
-  var(T2),
-  T1 \== T2.
+dfs(Node, Node, Path) :- Path = [Node].
+dfs(Node, Goal, Path) :-
+  dfs_(Node, Goal, [Node], PathFound),
+  Path = [Node|PathFound].
 
-sliding_window_2(_, []) :- false.
-sliding_window_2(_, [_|[]]) :- false.
-sliding_window_2(Fnc, [X,Y|[]]) :- call(Fnc, X, Y).
-sliding_window_2(Fnc, [X,Y|Rst]) :-
-  call(Fnc, X, Y),
-  sliding_window_2(Fnc, [Y|Rst]).
-
-n_free_vars(0, []) :- true.
-n_free_vars(1, [T|[]]) :- var(T).
-n_free_vars(N, Lst) :-
-  length(Lst, N),
-  sliding_window_2(free_and_different, Lst).
+dfs_(Node, Node, _, Path) :- Path = [Node].
+dfs_(Node, Goal, _, Path) :-
+  page_ordering_rule(Node, Goal),
+  Path = [Goal].
+dfs_(Node, Goal, SeenList, Path) :-
+  bagof(R, (page_ordering_rule(Node, R), not(member(R, SeenList))), Options),
+  member(Option, Options),
+  dfs_(Option, Goal, [Option|SeenList], PathContinued),
+  Path = [Option|PathContinued].
 
 % does there exist a rule that has this number in it at all
 rule_for_page_number(Number) :-
@@ -79,6 +76,7 @@ can_end_with(Bag, Left, Filtered) :-
   bagof(R, page_ordering_rule(Left, R), RightNumbers),
   bagof(N, (member(N, RightNumbers), member(N, Bag)), Filtered).
 
+% out of Bag, Filtered is what is allowed for the starting page update
 can_start_with(Bag, Filtered) :-
   bagof(L, page_ordering_rule(L, _), LeftNumbers),
   bagof(N, (member(N, LeftNumbers), member(N, Bag)), Filtered).
@@ -128,9 +126,12 @@ parse_page_updates([UpdateIds|Rst]) -->
 printer(PrintRules, PageUpdates) -->
   parse_rules(PrintRules), parse_page_updates(PageUpdates).
 
-part_1 :-
+setup_rules_from_file(PrintOrderRules, PageUpdates) :-
   phrase_from_file(printer(PrintOrderRules, PageUpdates), 'data/day5.txt'),
-  setup_print_ordering_rules(PrintOrderRules),
+  setup_print_ordering_rules(PrintOrderRules).
+
+part_1 :-
+  setup_rules_from_file(_PrintOrderRules, PageUpdates),
   include(update_in_correct_order, PageUpdates, CorrectPageUpdates),
   maplist(lst_middle, CorrectPageUpdates, MiddlePagesOnly),
   maplist(atom_number, MiddlePagesOnly, MiddlePageNums),
@@ -139,12 +140,15 @@ part_1 :-
   halt(0).
 
 main :-
-  phrase_from_file(printer(PrintOrderRules, PageUpdates), 'data/day5example.txt'),
-  setup_print_ordering_rules(PrintOrderRules),
+  setup_rules_from_file(_PrintOrderRules, PageUpdates),
   exclude(update_in_correct_order, PageUpdates, IncorrectPageUpdates),
-  maplist(correct_order, IncorrectPageUpdates, CorrectedPageUpdates),
+  format('incorrect ordered ~w~n', [IncorrectPageUpdates]),
+  coverage(maplist(correct_order, IncorrectPageUpdates, CorrectedPageUpdates)),
+  show_coverage([dir(cov)]),
+  format('corrected ~w~n', [CorrectedPageUpdates]),
   maplist(lst_middle, CorrectedPageUpdates, MiddlePagesOnly),
   maplist(atom_number, MiddlePagesOnly, MiddlePageNums),
+  format('middle page numbers ~w~n', [MiddlePageNums]),
   sum_list(MiddlePageNums, Answer),
   format('~w~n', [Answer]),
   halt(0).
